@@ -1,0 +1,24 @@
+{
+  "name": "",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "pm2 start dist/main.js",
+    "build": "if [ -d dist ]; then rm -r dist; fi && tsc",
+    "dev": "nodemon",
+    "prod": "pm2 stop dist/main.js || true && pm2 start dist/main.js",
+    "test": "nodemon --exec ts-node src/test.ts"
+  },
+  "author": "Despane",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "nodemon": "^3.1.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
