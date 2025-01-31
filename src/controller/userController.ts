@@ -2,7 +2,39 @@ import { Context } from "telegraf";
 import { UserService } from "../service/UserService";
 import { Enterprise } from '../class/1cServer'
 import * as path from 'path'
+import dns from "dns";
+function isValidUserName(name: string): boolean {
+	// Проверка длины имени (2–50 символов)
+	if (name.length < 2 || name.length > 50) {
+		return false;
+	}
 
+	// Регулярное выражение: только буквы, пробелы и дефисы
+	const nameRegex = /^[A-Za-zА-Яа-яЁё\s-]+$/;
+	return nameRegex.test(name);
+}
+function isValidEmailFormat(email: string): boolean {
+	// Проверка длины email (минимум 6 символов, максимум 100)
+	if (email.length < 6 || email.length > 100) {
+		return false;
+	}
+
+	// Регулярное выражение для базовой валидации email
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+	return emailRegex.test(email);
+}
+
+async function hasMxRecord(email: string): Promise<boolean> {
+	const domain = email.split("@")[1];
+	if (!domain) return false;
+
+	try {
+		const records = await dns.promises.resolveMx(domain);
+		return records.length > 0;
+	} catch {
+		return false;
+	}
+}
 const BUTTONS = {
 	SEND_PHONE: {
 		text: "Отправить номер телефона",
@@ -229,7 +261,7 @@ export class UserController {
 		// Проверяем состояние пользователя
 		if (user.state === "awaiting_phone") {
 			// Проверяем, является ли сообщение корректным номером телефона
-			const phoneRegex = /^\+?[1-9]\d{1,14}$/; // Стандартный формат E.164
+			const phoneRegex = /^(\+7|7|8)\d{10}$/; // Стандартный формат E.164
 			if (phoneRegex.test(messageText)) {
 				try {
 					let tempUser = await Enterprise.getCardByPhone(messageText);
@@ -267,7 +299,6 @@ export class UserController {
 
 			if (isCodeValid) {
 				if (user.code) {
-					console.log(user.code)
 					// Если код верный, далее процесс регистрации или авторизации
 					this.userService.updateUserState(userId, "authorized");
 					await ctx.reply("Код подтвержден. Вы авторизованы");
@@ -301,27 +332,41 @@ export class UserController {
 				}
 			}
 		} else if (user.state === "awaiting_name") {
-			
+			// Проверяем имя перед сохранением
+			if (!isValidUserName(messageText)) {
+				await ctx.reply("Некорректное имя! Используйте только буквы, пробелы и дефисы, длина от 2 до 50 символов.");
+				return;
+			}
 			this.userService.addUser(userId, messageText, user.phone);
 			this.userService.updateUserState(userId, "awaiting_mail");
 			await ctx.reply(`Спасибо, ${messageText}! Теперь введите почту`, KEYBOARDS.REMOVE);
 		}
 		else if (user.state === "awaiting_mail") {
 			try {
-				let regUser= await Enterprise.addNewCard(user.name,user.phone,messageText,user.id)
-				this.userService.updateUserCode(userId,regUser)
+				// Проверяем формат email
+				if (!isValidEmailFormat(messageText)) {
+					await ctx.reply(`Некорректный формат email. Введите корректный email.`);
+					return;
+				}
+
+				// Проверяем MX-запись
+				const isDomainValid = await hasMxRecord(messageText);
+				if (!isDomainValid) {
+					await ctx.reply(`Почтовый сервер для указанного email не найден. Введите корректный email.`);
+					return;
+				}
+
+				// Если email валиден — продолжаем регистрацию
+				let regUser = await Enterprise.addNewCard(user.name, user.phone, messageText, user.id);
+				this.userService.updateUserCode(userId, regUser);
 				this.userService.updateUserState(userId, "authorized");
-				await ctx.reply(
-					`Регистрация завершена, можете продолжать работу`
-				);
+
+				await ctx.reply(`Регистрация завершена, можете продолжать работу`);
+			} catch (e) {
+				await ctx.reply(`Регистрация не завершена, попробуйте позже.`);
+				this.userService.updateUserState(userId, "unauthorized");
+				this.userService.addUser(userId, "", "");
 			}
-		catch (e) {
-			await ctx.reply(
-				`Регистрация не завершена попробуйте позже.`
-			);
-			this.userService.updateUserState(userId,"unauthorized")
-			this.userService.addUser(userId, "", "");
-		}
 		}
 		else if (user.state === "authorized") {
 			if (messageText === BUTTONS.LOGOUT.text) {
