@@ -1,6 +1,6 @@
 import { Telegraf } from "telegraf";
 import * as dotenv from "dotenv";
-import express, { NextFunction, RequestHandler } from 'express'
+import express, {RequestHandler } from 'express'
 import { UserService } from "./service/UserService";
 import { UserController } from "./controller/userController";
 
@@ -16,7 +16,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Инициализация бота
-const bot = new Telegraf(process.env.BOT_TOKEN!);
+const bot = new Telegraf("8085409440:AAGuxGaLyXqHUs385-oF8wLTlcVWQzw6FZA");
 
 // Используем middleware для обработки запросов от Telegram
 app.use(express.json());
@@ -27,7 +27,7 @@ const authMiddleware: RequestHandler = (req, res, next) => {
 	}
 
 	const token = authHeader.split(" ")[1];
-	if (token !== process.env.SECRET_TOKEN) {
+	if (token !== "28c777ffd217109961b5fb3a11b5b881aea2aa6af406ac7cc2c8dac4ddd0be11") {
 		return res.status(403).send("Forbidden");
 	}
 

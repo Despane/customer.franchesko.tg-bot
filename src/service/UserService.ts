@@ -48,12 +48,12 @@ export class UserService {
 		const code = Math.floor(100000 + Math.random() * 900000).toString(); // Генерация 6-значного кода
 		this.verificationCodes.set(userId, code);
 
-		const smsToken = process.env.SMS_TOKEN; // Получаем токен из .env
+		//const smsToken = process.env.SMS_TOKEN; // Получаем токен из .env
 		const message = `Ваш код подтверждения: ${code}`;
 
 		axios.get("https://sms.ru/sms/send", {
 			params: {
-				api_id: smsToken,
+				api_id: "BAADB095-E9A7-0E3F-91D5-77A094FA9574",
 				to: phone,
 				msg: message,
 				json: 1
