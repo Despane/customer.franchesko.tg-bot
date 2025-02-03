@@ -130,29 +130,43 @@ export class UserController {
 
 						if (tempUser) {
 							// Если получили данные, добавляем их пользователю и авторизуем
-							this.userService.addUser(userId, tempUser[1], contact.phone_number);
-							this.userService.updateUserCode(userId,tempUser[0])
-							const code = this.userService.generateVerificationCode(userId,contact.phone_number);
-							//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
-							this.userService.updateUserState(userId, "awaiting_code");
+							try{this.userService.addUser(userId, tempUser[1], contact.phone_number);
+								this.userService.updateUserCode(userId,tempUser[0])
+								const code = this.userService.generateVerificationCode(userId,contact.phone_number);
+								//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
+								this.userService.updateUserState(userId, "awaiting_code");
 
-							await ctx.reply(
-								`Ваш номер телефона (${contact.phone_number}) успешно получен. Мы отправили вам код, введите его для авторизации.`
-							);
+								await ctx.reply(
+									`Ваш номер телефона (${contact.phone_number}) успешно получен. Мы отправили вам код, введите его для авторизации.`
+								);}
+							catch (e) {
+								await ctx.reply(
+									`Ваш номер телефона (${contact.phone_number}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
+								)
+								this.userService.addUser(userId, "", "");
+								this.userService.updateUserState(userId, "unauthorized");
+							}
 						} else {
 							throw new Error("Данные о пользователе не найдены.");
 						}
 					} catch (error) {
 						console.error("Ошибка при получении карточки пользователя:", error);
 						// Запускаем процесс регистрации
-						const code = this.userService.generateVerificationCode(userId,contact.phone_number);
-						//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
-						this.userService.addUser(userId, "", contact.phone_number);
-						this.userService.updateUserState(userId, "awaiting_code");
+						try{const code = this.userService.generateVerificationCode(userId,contact.phone_number);
+							//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
+							this.userService.addUser(userId, "", contact.phone_number);
+							this.userService.updateUserState(userId, "awaiting_code");
 
-						await ctx.reply(
-							`Ваш номер телефона (${contact.phone_number}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
-						);
+							await ctx.reply(
+								`Ваш номер телефона (${contact.phone_number}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
+							);}
+						catch (e) {
+							await ctx.reply(
+								`Ваш номер телефона (${contact.phone_number}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
+							)
+							this.userService.addUser(userId, "", "");
+							this.userService.updateUserState(userId, "unauthorized");
+						}
 					}
 				} else if (user && user.state === "authorized") {
 					await ctx.reply("Вы уже авторизованы! Чем я могу вам помочь?");
@@ -268,28 +282,42 @@ export class UserController {
 
 					if (tempUser) {
 						// Если получили данные, добавляем их пользователю и авторизуем
-						this.userService.addUser(userId, tempUser[1], messageText);
-						this.userService.updateUserCode(userId,tempUser[0])
-						const code = this.userService.generateVerificationCode(userId,messageText);
-						//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
-						this.userService.updateUserState(userId, "awaiting_code");
-						await ctx.reply(
-							`Ваш номер телефона (${messageText}) успешно получен. Мы отправили вам код, введите его для авторизации.`
-						);
+						try{this.userService.addUser(userId, tempUser[1], messageText);
+							this.userService.updateUserCode(userId,tempUser[0])
+							const code = this.userService.generateVerificationCode(userId,messageText);
+							//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
+							this.userService.updateUserState(userId, "awaiting_code");
+							await ctx.reply(
+								`Ваш номер телефона (${messageText}) успешно получен. Мы отправили вам код, введите его для авторизации.`
+							);}
+						catch (e) {
+							await ctx.reply(
+								`Ваш номер телефона (${messageText}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
+							)
+							this.userService.addUser(userId, "", "");
+							this.userService.updateUserState(userId, "unauthorized");
+						}
 					} else {
 						throw new Error("Данные о пользователе не найдены.");
 					}
 				} catch (error) {
 					console.error("Ошибка при получении карточки пользователя:", error);
 					// Запускаем процесс регистрации
-					const code = this.userService.generateVerificationCode(userId,messageText);
-					//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
-					this.userService.addUser(userId, "", messageText);
-					this.userService.updateUserState(userId, "awaiting_code");
+					try{const code = this.userService.generateVerificationCode(userId,messageText);
+						//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
+						this.userService.addUser(userId, "", messageText);
+						this.userService.updateUserState(userId, "awaiting_code");
 
-					await ctx.reply(
-						`Ваш номер телефона (${messageText}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
-					);
+						await ctx.reply(
+							`Ваш номер телефона (${messageText}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
+						);}
+					catch (e) {
+						await ctx.reply(
+							`Ваш номер телефона (${messageText}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
+						)
+						this.userService.addUser(userId, "", "");
+						this.userService.updateUserState(userId, "unauthorized");
+					}
 				}
 			} else {
 				await ctx.reply("Введите корректный номер телефона в международном формате (например, +123456789).");
