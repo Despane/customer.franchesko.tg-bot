@@ -1,5 +1,6 @@
 import { User } from "../interfaces/user";
 import { UserRepository } from "../repository/UserRepository";
+import axios from 'axios'
 
 const userRepository = new UserRepository();
 
@@ -43,9 +44,28 @@ export class UserService {
 		userRepository.updateUserCode(id, code);
 	}
 	// Метод для генерации кода подтверждения
-	generateVerificationCode(userId: number): string {
+	generateVerificationCode(userId: number, phone: string): string {
 		const code = Math.floor(100000 + Math.random() * 900000).toString(); // Генерация 6-значного кода
 		this.verificationCodes.set(userId, code);
+
+		const smsToken = process.env.SMS_TOKEN; // Получаем токен из .env
+		const message = `Ваш код подтверждения: ${code}`;
+
+		axios.get("https://sms.ru/sms/send", {
+			params: {
+				api_id: smsToken,
+				to: phone,
+				msg: message,
+				json: 1
+			}
+		})
+			.then(response => {
+				//console.log("SMS отправлено:", response.data);
+			})
+			.catch(error => {
+				console.error("Ошибка при отправке SMS:", error);
+			});
+
 		return code;
 	}
 

@@ -132,8 +132,8 @@ export class UserController {
 							// Если получили данные, добавляем их пользователю и авторизуем
 							this.userService.addUser(userId, tempUser[1], contact.phone_number);
 							this.userService.updateUserCode(userId,tempUser[0])
-							const code = this.userService.generateVerificationCode(userId);
-							console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
+							const code = this.userService.generateVerificationCode(userId,contact.phone_number);
+							//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
 							this.userService.updateUserState(userId, "awaiting_code");
 
 							await ctx.reply(
@@ -145,8 +145,8 @@ export class UserController {
 					} catch (error) {
 						console.error("Ошибка при получении карточки пользователя:", error);
 						// Запускаем процесс регистрации
-						const code = this.userService.generateVerificationCode(userId);
-						console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
+						const code = this.userService.generateVerificationCode(userId,contact.phone_number);
+						//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
 						this.userService.addUser(userId, "", contact.phone_number);
 						this.userService.updateUserState(userId, "awaiting_code");
 
@@ -216,7 +216,7 @@ export class UserController {
 					try {
 						if(user.code){
 						const history = await Enterprise.getHistory(user.code);
-						console.log(history)
+						//console.log(history)
 						if (!history.length) {
 							await ctx.reply("История пуста.");
 							return;
@@ -270,8 +270,8 @@ export class UserController {
 						// Если получили данные, добавляем их пользователю и авторизуем
 						this.userService.addUser(userId, tempUser[1], messageText);
 						this.userService.updateUserCode(userId,tempUser[0])
-						const code = this.userService.generateVerificationCode(userId);
-						console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
+						const code = this.userService.generateVerificationCode(userId,messageText);
+						//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
 						this.userService.updateUserState(userId, "awaiting_code");
 						await ctx.reply(
 							`Ваш номер телефона (${messageText}) успешно получен. Мы отправили вам код, введите его для авторизации.`
@@ -282,8 +282,8 @@ export class UserController {
 				} catch (error) {
 					console.error("Ошибка при получении карточки пользователя:", error);
 					// Запускаем процесс регистрации
-					const code = this.userService.generateVerificationCode(userId);
-					console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
+					const code = this.userService.generateVerificationCode(userId,messageText);
+					//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
 					this.userService.addUser(userId, "", messageText);
 					this.userService.updateUserState(userId, "awaiting_code");
 

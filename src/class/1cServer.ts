@@ -69,14 +69,14 @@ export class  Enterprise {
 		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 		try {
 			this.SOAP = await createClientAsync(SOAP_link, options);
-			console.log('SOAP Client Headers:', this.SOAP.wsdl_options?.headers);
+			//console.log('SOAP Client Headers:', this.SOAP.wsdl_options?.headers);
 			// Проверка, содержит ли клиент ожидаемые методы
 			if (!this.SOAP.ping) {
 				console.error('SOAP client does not contain the expected method: ping');
 				throw new Error('Invalid SOAP client configuration: ping method is missing.');
 			}
 
-			console.log('SOAP Client Description:', this.SOAP.describe());
+			//console.log('SOAP Client Description:', this.SOAP.describe());
 		} catch (error: any) {
 			console.error('HTTP Status Code:', error.statusCode); // Это выведет код состояния HTTP
 			console.error('Response Body:', error.responseBody); // Тело ответа, если есть
@@ -160,7 +160,7 @@ export class  Enterprise {
 				});
 			});
 
-			console.log('Ping result:', result);
+			//console.log('Ping result:', result);
 			return true;
 		} catch (error: any) {
 			console.error('Error during SOAP connection:', error);
@@ -197,7 +197,7 @@ export class  Enterprise {
 			});
 
 			let new_result = this.associate(result)
-			console.log(new_result)
+			//console.log(new_result)
 			if (new_result&&new_result.success === true){
 				return [new_result?.card?.code,new_result?.card?.person];
 			}
@@ -286,9 +286,9 @@ export class  Enterprise {
 			});
 
 			let new_result = this.associate(result)
-			console.log(new_result)
+			//console.log(new_result)
 			if (new_result&&new_result.success === true){
-				console.log(new_result?.bonusPoints)
+				//console.log(new_result?.bonusPoints)
 				return new_result?.bonusPoints;
 			}
 			else{
@@ -329,7 +329,7 @@ export class  Enterprise {
 
 			let new_result = this.associate(result)
 			if (new_result&&new_result.success === true){
-				console.log(new_result?.card?.code)
+				//console.log(new_result?.card?.code)
 				return new_result?.card?.code;
 			}
 			else{
@@ -389,7 +389,7 @@ export class  Enterprise {
 				try {
 					if (fs.existsSync(filePath)) {
 						await fs.promises.unlink(filePath); // Удаляем файл
-						console.log(`File ${filePath} deleted after 2 minutes.`);
+						//console.log(`File ${filePath} deleted after 2 minutes.`);
 					}
 				} catch (error) {
 					console.error('Error deleting file:', error);
@@ -437,7 +437,7 @@ export class  Enterprise {
 
 			let new_result = this.associate(result)
 			if (new_result&&new_result.success === true){
-				console.log(new_result?.card?.code)
+				//console.log(new_result?.card?.code)
 				return new_result?.card?.code;
 			}
 			else{
