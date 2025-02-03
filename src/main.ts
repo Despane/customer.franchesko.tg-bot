@@ -71,9 +71,9 @@ app.post("/sendCode",authMiddleware, async (req, res) => {
 	}
 });
 // Настроим вебхук для бота
-const webhookUrl = `https://89deeaab95701b.lhr.life/webhook`; // Замените на ваш реальный URL
+const webhookUrl = `https://10a2f833a86eb8.lhr.life/webhook`;
 
-bot.telegram.setWebhook(webhookUrl);
+bot.launch();
 
 // Команды и обработчики бота
 bot.command("start", (ctx) => userController.handleStart(ctx));
