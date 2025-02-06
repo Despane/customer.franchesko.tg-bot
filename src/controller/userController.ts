@@ -52,6 +52,9 @@ const BUTTONS = {
 	LAST_OPERATIONS: {
 		text: "Последние операции",
 	},
+	CHANGE_MAIL: {
+		text: "Сменить почту",
+	},
 };
 
 const KEYBOARDS = {
@@ -66,7 +69,7 @@ const KEYBOARDS = {
 		reply_markup: {
 			keyboard: [
 				[BUTTONS.BALANCE, BUTTONS.QR_CODE],
-				[BUTTONS.LAST_OPERATIONS, BUTTONS.LOGOUT],
+				[BUTTONS.LAST_OPERATIONS, BUTTONS.LOGOUT,BUTTONS.CHANGE_MAIL],
 			],
 			resize_keyboard: true,
 		},
@@ -76,6 +79,7 @@ const KEYBOARDS = {
 			remove_keyboard: true as true,
 		},
 	},
+
 };
 
 
@@ -109,7 +113,7 @@ export class UserController {
 		} else if (user.state === "awaiting_code") {
 			await ctx.reply("Пожалуйста, введите код, отправленный на ваш номер телефона.");
 		} else if (user.state === "authorized") {
-			await ctx.reply("Вы авторизованы! Чем я могу вам помочь?", KEYBOARDS.AUTHORIZED);
+			await ctx.reply("Вы авторизованы! Выберите нужное действие", KEYBOARDS.AUTHORIZED);
 		}
 	}
 
@@ -169,7 +173,7 @@ export class UserController {
 						}
 					}
 				} else if (user && user.state === "authorized") {
-					await ctx.reply("Вы уже авторизованы! Чем я могу вам помочь?");
+					await ctx.reply("Вы уже авторизованы! Выберите /start для продолжения работы?");
 				}
 			} else {
 				await ctx.reply("Не удалось получить номер телефона. Попробуйте снова.");
@@ -202,8 +206,18 @@ export class UserController {
 			switch (messageText) {
 				case BUTTONS.BALANCE.text:
 					try {
-						const balance = await Enterprise.getBalanceByPhone(user.phone);
-						await ctx.reply(`Ваш баланс: ${balance} ₽`);
+						const balanceData = await Enterprise.getBalanceByCode(user.code!);
+
+						// Формируем текст для ответа
+						let responseText = `Ваш баланс: ${balanceData.balance} ₽`;
+
+						if (balanceData.plannedDescriptions.length > 0) {
+							responseText += `\n\n📅 *Запланированные списания бонусов:*\n`;
+							responseText += balanceData.plannedDescriptions.map((desc:string) => `- ${desc}`).join("\n");
+						} else {
+							responseText += `\n\n✅ У вас нет запланированных списаний.`;
+						}
+						await ctx.reply(responseText, { parse_mode: "Markdown" });
 					} catch (error) {
 						console.error("Ошибка получения баланса:", error);
 						await ctx.reply("Не удалось получить баланс. Попробуйте позже.");
@@ -231,7 +245,7 @@ export class UserController {
 						if(user.code){
 						const history = await Enterprise.getHistory(user.code);
 						//console.log(history)
-						if (!history.length) {
+						if (!history||!history.length) {
 							await ctx.reply("История пуста.");
 							return;
 						}
@@ -266,12 +280,43 @@ export class UserController {
 						KEYBOARDS.REMOVE
 					);
 					return;
+				case BUTTONS.CHANGE_MAIL.text:
+					this.userService.updateUserState(userId, "awaiting_mail_adress");
+					await ctx.reply(
+						"Введите новую почту. Для возврата меню введите любой текст кроме почты"
+					);
+					return;
 				default:
-					await ctx.reply("Вы уже авторизованы! Чем я могу вам помочь?", KEYBOARDS.AUTHORIZED);
+					await ctx.reply("Вы уже авторизованы! Выберите /start для продолжения работы?", KEYBOARDS.AUTHORIZED);
 					return;
 			}
 		}
-
+		if(user.state === "awaiting_mail_adress"){
+			try {
+				// Проверяем формат email
+				if (!isValidEmailFormat(messageText)) {
+					await ctx.reply(`Некорректный формат email. Возврат в меню`,KEYBOARDS.AUTHORIZED);
+					this.userService.updateUserState(userId, "authorized");
+					return;
+				}
+				// Проверяем MX-запись
+				const isDomainValid = await hasMxRecord(messageText);
+				if (!isDomainValid) {
+					await ctx.reply(`Некорректный формат email. Возврат в меню`,KEYBOARDS.AUTHORIZED);
+					this.userService.updateUserState(userId, "authorized");
+					return;
+				}
+				// Если email валиден — продолжаем регистрацию
+				let regUser = await Enterprise.updateCardDetailsByPhone(user.phone, messageText, user.id);
+				this.userService.updateUserState(userId, "authorized");
+				if (regUser){
+					await ctx.reply(`Данные обновлены.`, KEYBOARDS.AUTHORIZED);
+				}
+			} catch (e) {
+				await ctx.reply(`Произошла ошибка, попробуйте позже.`);
+				this.userService.updateUserState(userId, "authorized");
+			}
+		}
 		// Проверяем состояние пользователя
 		if (user.state === "awaiting_phone") {
 			// Проверяем, является ли сообщение корректным номером телефона
@@ -329,7 +374,7 @@ export class UserController {
 				if (user.code) {
 					// Если код верный, далее процесс регистрации или авторизации
 					this.userService.updateUserState(userId, "authorized");
-					await ctx.reply("Код подтвержден. Вы авторизованы");
+					await ctx.reply("Код подтвержден. Вы авторизованы.", KEYBOARDS.AUTHORIZED);
 					try {
 						let auth = await Enterprise.updateCardDetailsByPhone(user.phone,'',userId)
 					}
@@ -388,26 +433,26 @@ export class UserController {
 				let regUser = await Enterprise.addNewCard(user.name, user.phone, messageText, user.id);
 				this.userService.updateUserCode(userId, regUser);
 				this.userService.updateUserState(userId, "authorized");
-
-				await ctx.reply(`Регистрация завершена, можете продолжать работу`);
+				await ctx.reply(`Регистрация завершена.`, KEYBOARDS.AUTHORIZED);
 			} catch (e) {
 				await ctx.reply(`Регистрация не завершена, попробуйте позже.`);
 				this.userService.updateUserState(userId, "unauthorized");
 				this.userService.addUser(userId, "", "");
 			}
 		}
-		else if (user.state === "authorized") {
-			if (messageText === BUTTONS.LOGOUT.text) {
-				this.userService.updateUserState(userId, "awaiting_phone");
-
-				await ctx.reply(
-					"Вы успешно вышли из системы. Для повторной регистрации используйте команду /start.",
-					KEYBOARDS.REMOVE
-				);
-			} else {
-				await ctx.reply("Вы уже авторизованы! Чем я могу вам помочь?");
-			}
-		} else {
+		// else if (user.state === "authorized") {
+		// 	if (messageText === BUTTONS.LOGOUT.text) {
+		// 		this.userService.updateUserState(userId, "awaiting_phone");
+		//
+		// 		await ctx.reply(
+		// 			"Вы успешно вышли из системы. Для повторной регистрации используйте команду /start.",
+		// 			KEYBOARDS.REMOVE
+		// 		);
+		// 	} else {
+		// 		await ctx.reply("Вы уже авторизованы! Выберите /start для продолжения работы?");
+		// 	}
+		// }
+		else {
 			await ctx.reply("Произошла ошибка. Попробуйте начать с команды /start.");
 		}
 	}
