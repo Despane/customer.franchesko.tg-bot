@@ -257,7 +257,7 @@ export class UserController {
 						let message = "📜 *Ваша история бонусов:*\n\n";
 
 						history.forEach((entry:any) => {
-							const date = new Date(entry.date).toLocaleDateString("ru-RU"); // Форматируем дату
+							const date = new Date(entry.date).toISOString().split("T")[0].split("-").reverse().join(".");
 							message += `📅 *Дата:* ${escapeMarkdown(date)}\n`;
 							message += `🔹 *Описание:* ${escapeMarkdown(entry.description)}\n`;
 							message += `💰 *Баллы:* ${entry.total > 0 ? `\\+${escapeMarkdown(entry.total.toString())}` : escapeMarkdown(entry.total.toString())} баллов\n`;
@@ -311,10 +311,13 @@ export class UserController {
 				this.userService.updateUserState(userId, "authorized");
 				if (regUser){
 					await ctx.reply(`Данные обновлены.`, KEYBOARDS.AUTHORIZED);
+					return;
 				}
 			} catch (e) {
+				//console.log(e)
 				await ctx.reply(`Произошла ошибка, попробуйте позже.`);
 				this.userService.updateUserState(userId, "authorized");
+				return;
 			}
 		}
 		// Проверяем состояние пользователя
@@ -404,7 +407,8 @@ export class UserController {
 					);
 				}
 			}
-		} else if (user.state === "awaiting_name") {
+		}
+		else if (user.state === "awaiting_name") {
 			// Проверяем имя перед сохранением
 			if (!isValidUserName(messageText)) {
 				await ctx.reply("Некорректное имя! Используйте только буквы, пробелы и дефисы, длина от 2 до 50 символов.");
@@ -440,19 +444,21 @@ export class UserController {
 				this.userService.addUser(userId, "", "");
 			}
 		}
-		// else if (user.state === "authorized") {
-		// 	if (messageText === BUTTONS.LOGOUT.text) {
-		// 		this.userService.updateUserState(userId, "awaiting_phone");
-		//
-		// 		await ctx.reply(
-		// 			"Вы успешно вышли из системы. Для повторной регистрации используйте команду /start.",
-		// 			KEYBOARDS.REMOVE
-		// 		);
-		// 	} else {
-		// 		await ctx.reply("Вы уже авторизованы! Выберите /start для продолжения работы?");
-		// 	}
-		// }
+		else if (user.state === "authorized") {
+			if (messageText === BUTTONS.LOGOUT.text) {
+				this.userService.updateUserState(userId, "awaiting_phone");
+
+				await ctx.reply(
+					"Вы успешно вышли из системы. Для повторной регистрации используйте команду /start.",
+					KEYBOARDS.REMOVE
+				);
+			} else {
+
+				await ctx.reply("Вы уже авторизованы! Выберите /start для продолжения работы?");
+			}
+		}
 		else {
+
 			await ctx.reply("Произошла ошибка. Попробуйте начать с команды /start.");
 		}
 	}

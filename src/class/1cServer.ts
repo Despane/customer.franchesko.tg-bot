@@ -258,8 +258,8 @@ export class  Enterprise {
 			let new_result = this.associate(result)
 			const new_result2= this.associate(result2)
 
-			console.log(new_result)
-			console.log(new_result2)
+			// console.log(new_result)
+			// console.log(new_result2)
 			if (new_result&&new_result.success === true){
 				return {
 					balance: new_result?.card?.balance,
@@ -474,154 +474,154 @@ export class  Enterprise {
 
 
 //Example Express Setup
-const app = express();
-const PORT = process.env.PORT || 3010;
-
-app.get('/ping', async (req, res) => {
-	try {
-		const response = await Enterprise.ping();
-		res.json({ success: true, data: response });
-	} catch (error) {
-		res.status(500).json({ success: false, message: (error as Error).message });
-	}
-});
-app.get('/card-by-phone', async (req, res) => {
-	const { phone } = req.query;
-
-	// Проверка на наличие параметра phone
-	if (!phone || typeof phone !== 'string') {
-		return res.status(400).json({ success: false, message: 'Phone parameter is required and must be a string.' });
-	}
-
-	try {
-		const response = await Enterprise.getCardByPhone(phone);
-		res.json({ success: true, data: response });
-	} catch (error) {
-		res.status(500).json({ success: false, message: (error as Error).message });
-	}
-});
-app.get('/balance', async (req, res) => {
-	const { code } = req.query;
-
-	// Проверка на наличие параметра phone
-	if (!code || typeof code !== 'string') {
-		return res.status(400).json({ success: false, message: 'Phone parameter is required and must be a string.' });
-	}
-
-	try {
-		const response = await Enterprise.getBalanceByCode(code);
-		res.json({ success: true, data: response });
-	} catch (error) {
-		res.status(500).json({ success: false, message: (error as Error).message });
-	}
-});
-app.get('/history', async (req, res) => {
-	const { code, limit } = req.query;
-
-	// Проверяем наличие параметра code и приводим limit к числу
-	if (!code || typeof code !== 'string') {
-		return res.status(400).json({ success: false, message: 'Code parameter is required and must be a string.' });
-	}
-
-	const parsedLimit = limit ? parseInt(limit as string, 10) : 0;
-	if (isNaN(parsedLimit) || parsedLimit < 0) {
-		return res.status(400).json({ success: false, message: 'Limit must be a non-negative integer.' });
-	}
-
-	try {
-		const response = await Enterprise.getHistory(code, parsedLimit);
-		res.json({ success: true, data: response });
-	} catch (error) {
-		res.status(500).json({ success: false, message: (error as Error).message });
-	}
-});
-app.get('/qr-card', async (req, res) => {
-	const { code } = req.query;
-
-	// Проверка параметра code
-	if (!code || typeof code !== 'string') {
-		return res.status(400).json({ success: false, message: 'Code parameter is required and must be a string.' });
-	}
-
-	try {
-		const response = await Enterprise.getQRCard(code);
-
-		// Проверяем, существует ли файл, прежде чем отправить его
-		if (fs.existsSync(response.path)) {
-			res.json({ success: true, data: response });
-		} else {
-			res.status(500).json({ success: false, message: 'QR image file not found.' });
-		}
-	} catch (error) {
-		res.status(500).json({ success: false, message: (error as Error).message });
-	}})
-app.get('/addCard', async (req, res) => {
-	const name = req.query.name as string;
-	const phone = req.query.phone as string;
-	const email = req.query.email as string;
-	const telegram = req.query.telegram as string;
-
-	// Проверка параметра code
-	if (!name || typeof name !== 'string' || name.trim().length === 0) {
-		return res.status(400).json({ success: false, message: 'Name parameter is required and must be a non-empty string.' });
-	}
-
-	if (!phone || typeof phone !== 'string' || !/^\+?[1-9]\d{1,14}$/.test(phone)) {
-		return res.status(400).json({ success: false, message: 'Phone parameter is required and must be a valid phone number.' });
-	}
-
-	if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-		return res.status(400).json({ success: false, message: 'Email parameter is required and must be a valid email address.' });
-	}
-
-	let telegramNumber: number | null = null;
-	if (telegram && typeof telegram === 'string' && /^\d+$/.test(telegram)) {
-		telegramNumber = parseInt(telegram, 10);
-	} else {
-		return res.status(400).json({ success: false, message: 'Telegram parameter is required and must be a valid number.' });
-	}
-
-	try {
-		const response = await Enterprise.addNewCard(name,phone,email,telegramNumber);
-
-		// Проверяем, существует ли файл, прежде чем отправить его
-		if (response) {
-			res.json({ success: true, data: response });
-		} else {
-			res.status(500).json({ success: false, message: 'QR image file not found.' });
-		}
-	} catch (error) {
-		res.status(500).json({ success: false, message: (error as Error).message });
-	}})
-app.get('/updateCard', async (req, res) => {
-	const phone = req.query.phone as string;
-	const email = req.query.email as string;
-	const telegram = req.query.telegram as string;
-
-	if (!phone || typeof phone !== 'string' || !/^\+?[1-9]\d{1,14}$/.test(phone)) {
-		return res.status(400).json({ success: false, message: 'Phone parameter is required and must be a valid phone number.' });
-	}
-
-
-	let telegramNumber: number | null = null;
-	if (telegram && typeof telegram === 'string' && /^\d+$/.test(telegram)) {
-		telegramNumber = parseInt(telegram, 10);
-	} else {
-		return res.status(400).json({ success: false, message: 'Telegram parameter is required and must be a valid number.' });
-	}
-
-	try {
-		const response = await Enterprise.updateCardDetailsByPhone(phone,email,telegramNumber);
-
-		// Проверяем, существует ли файл, прежде чем отправить его
-		if (response) {
-			res.json({ success: true, data: response });
-		} else {
-			res.status(500).json({ success: false, message: 'QR image file not found.' });
-		}
-	} catch (error) {
-		res.status(500).json({ success: false, message: (error as Error).message });
-	}})
-app.listen(PORT, () => {
-	console.log(`Server is running on port ${PORT}`);
-});
+// const app = express();
+// const PORT = process.env.PORT || 3010;
+//
+// app.get('/ping', async (req, res) => {
+// 	try {
+// 		const response = await Enterprise.ping();
+// 		res.json({ success: true, data: response });
+// 	} catch (error) {
+// 		res.status(500).json({ success: false, message: (error as Error).message });
+// 	}
+// });
+// app.get('/card-by-phone', async (req, res) => {
+// 	const { phone } = req.query;
+//
+// 	// Проверка на наличие параметра phone
+// 	if (!phone || typeof phone !== 'string') {
+// 		return res.status(400).json({ success: false, message: 'Phone parameter is required and must be a string.' });
+// 	}
+//
+// 	try {
+// 		const response = await Enterprise.getCardByPhone(phone);
+// 		res.json({ success: true, data: response });
+// 	} catch (error) {
+// 		res.status(500).json({ success: false, message: (error as Error).message });
+// 	}
+// });
+// app.get('/balance', async (req, res) => {
+// 	const { code } = req.query;
+//
+// 	// Проверка на наличие параметра phone
+// 	if (!code || typeof code !== 'string') {
+// 		return res.status(400).json({ success: false, message: 'Phone parameter is required and must be a string.' });
+// 	}
+//
+// 	try {
+// 		const response = await Enterprise.getBalanceByCode(code);
+// 		res.json({ success: true, data: response });
+// 	} catch (error) {
+// 		res.status(500).json({ success: false, message: (error as Error).message });
+// 	}
+// });
+// app.get('/history', async (req, res) => {
+// 	const { code, limit } = req.query;
+//
+// 	// Проверяем наличие параметра code и приводим limit к числу
+// 	if (!code || typeof code !== 'string') {
+// 		return res.status(400).json({ success: false, message: 'Code parameter is required and must be a string.' });
+// 	}
+//
+// 	const parsedLimit = limit ? parseInt(limit as string, 10) : 0;
+// 	if (isNaN(parsedLimit) || parsedLimit < 0) {
+// 		return res.status(400).json({ success: false, message: 'Limit must be a non-negative integer.' });
+// 	}
+//
+// 	try {
+// 		const response = await Enterprise.getHistory(code, parsedLimit);
+// 		res.json({ success: true, data: response });
+// 	} catch (error) {
+// 		res.status(500).json({ success: false, message: (error as Error).message });
+// 	}
+// });
+// app.get('/qr-card', async (req, res) => {
+// 	const { code } = req.query;
+//
+// 	// Проверка параметра code
+// 	if (!code || typeof code !== 'string') {
+// 		return res.status(400).json({ success: false, message: 'Code parameter is required and must be a string.' });
+// 	}
+//
+// 	try {
+// 		const response = await Enterprise.getQRCard(code);
+//
+// 		// Проверяем, существует ли файл, прежде чем отправить его
+// 		if (fs.existsSync(response.path)) {
+// 			res.json({ success: true, data: response });
+// 		} else {
+// 			res.status(500).json({ success: false, message: 'QR image file not found.' });
+// 		}
+// 	} catch (error) {
+// 		res.status(500).json({ success: false, message: (error as Error).message });
+// 	}})
+// app.get('/addCard', async (req, res) => {
+// 	const name = req.query.name as string;
+// 	const phone = req.query.phone as string;
+// 	const email = req.query.email as string;
+// 	const telegram = req.query.telegram as string;
+//
+// 	// Проверка параметра code
+// 	if (!name || typeof name !== 'string' || name.trim().length === 0) {
+// 		return res.status(400).json({ success: false, message: 'Name parameter is required and must be a non-empty string.' });
+// 	}
+//
+// 	if (!phone || typeof phone !== 'string' || !/^\+?[1-9]\d{1,14}$/.test(phone)) {
+// 		return res.status(400).json({ success: false, message: 'Phone parameter is required and must be a valid phone number.' });
+// 	}
+//
+// 	if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+// 		return res.status(400).json({ success: false, message: 'Email parameter is required and must be a valid email address.' });
+// 	}
+//
+// 	let telegramNumber: number | null = null;
+// 	if (telegram && typeof telegram === 'string' && /^\d+$/.test(telegram)) {
+// 		telegramNumber = parseInt(telegram, 10);
+// 	} else {
+// 		return res.status(400).json({ success: false, message: 'Telegram parameter is required and must be a valid number.' });
+// 	}
+//
+// 	try {
+// 		const response = await Enterprise.addNewCard(name,phone,email,telegramNumber);
+//
+// 		// Проверяем, существует ли файл, прежде чем отправить его
+// 		if (response) {
+// 			res.json({ success: true, data: response });
+// 		} else {
+// 			res.status(500).json({ success: false, message: 'QR image file not found.' });
+// 		}
+// 	} catch (error) {
+// 		res.status(500).json({ success: false, message: (error as Error).message });
+// 	}})
+// app.get('/updateCard', async (req, res) => {
+// 	const phone = req.query.phone as string;
+// 	const email = req.query.email as string;
+// 	const telegram = req.query.telegram as string;
+//
+// 	if (!phone || typeof phone !== 'string' || !/^\+?[1-9]\d{1,14}$/.test(phone)) {
+// 		return res.status(400).json({ success: false, message: 'Phone parameter is required and must be a valid phone number.' });
+// 	}
+//
+//
+// 	let telegramNumber: number | null = null;
+// 	if (telegram && typeof telegram === 'string' && /^\d+$/.test(telegram)) {
+// 		telegramNumber = parseInt(telegram, 10);
+// 	} else {
+// 		return res.status(400).json({ success: false, message: 'Telegram parameter is required and must be a valid number.' });
+// 	}
+//
+// 	try {
+// 		const response = await Enterprise.updateCardDetailsByPhone(phone,email,telegramNumber);
+//
+// 		// Проверяем, существует ли файл, прежде чем отправить его
+// 		if (response) {
+// 			res.json({ success: true, data: response });
+// 		} else {
+// 			res.status(500).json({ success: false, message: 'QR image file not found.' });
+// 		}
+// 	} catch (error) {
+// 		res.status(500).json({ success: false, message: (error as Error).message });
+// 	}})
+// app.listen(PORT, () => {
+// 	console.log(`Server is running on port ${PORT}`);
+// });
