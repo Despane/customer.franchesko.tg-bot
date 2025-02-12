@@ -198,6 +198,7 @@ export class UserController {
 		const user = this.userService.getUserInfo(userId);
 
 		if (!user) {
+			await ctx.reply(userId.toString()+"Пользователь с этим ID не найден")
 			await ctx.reply("Пожалуйста, начните с команды /start.");
 			return;
 		}
@@ -274,7 +275,7 @@ export class UserController {
 					}
 					return;
 				case BUTTONS.LOGOUT.text:
-					this.userService.updateUserState(userId, "awaiting_phone");
+					this.userService.removeUser(userId);
 					await ctx.reply(
 						"Вы успешно вышли из системы. Для повторной регистрации используйте команду /start.",
 						KEYBOARDS.REMOVE

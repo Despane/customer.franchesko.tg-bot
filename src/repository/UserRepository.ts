@@ -5,15 +5,17 @@ const users: Map<number, User> = new Map();
 
 export class UserRepository {
 	addUser(user: User): void {
-		//console.log(user.id)
+
 		users.set(user.id, user);
 	}
 
 	findUserById(id: number): User | undefined {
+
 		return users.get(id);
 	}
 
 	getAllUsers(): User[] {
+
 		return Array.from(users.values());
 	}
 
