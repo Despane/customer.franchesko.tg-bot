@@ -198,7 +198,6 @@ export class UserController {
 		const user = this.userService.getUserInfo(userId);
 
 		if (!user) {
-			await ctx.reply(userId.toString()+"Пользователь с этим ID не найден")
 			await ctx.reply("Пожалуйста, начните с команды /start.");
 			return;
 		}
@@ -331,7 +330,8 @@ export class UserController {
 
 					if (tempUser) {
 						// Если получили данные, добавляем их пользователю и авторизуем
-						try{this.userService.addUser(userId, tempUser[1], messageText);
+						try{
+							this.userService.addUser(userId, tempUser[1], messageText);
 							this.userService.updateUserCode(userId,tempUser[0])
 							const code = this.userService.generateVerificationCode(userId,messageText);
 							//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);

@@ -8,6 +8,7 @@ export class UserService {
 	private verificationCodes: Map<number, string> = new Map();
 
 	addUser(id: number, name: string, phone: string): void {
+
 		// Проверяем, есть ли пользователь с таким ID
 		const userExists = userRepository.findUserById(id);
 
@@ -15,16 +16,8 @@ export class UserService {
 			// Если пользователь с таким ID найден, обновляем его данные
 			userRepository.updateUser(id, { name, phone });
 		} else {
-			// Если пользователя с таким ID нет, проверяем на уникальность телефона
-			const existingUserWithPhone = [...userRepository.getAllUsers()].find(user => user.phone === phone);
-
-			if (existingUserWithPhone) {
-				// Если номер телефона уже занят, перезаписываем данные пользователя с этим номером
-				userRepository.updateUser(existingUserWithPhone.id, { name, phone });
-			} else {
-				// Если номера телефона нет в базе, добавляем нового пользователя
-				userRepository.addUser({ id, name, phone, state: "unauthorized" });
-			}
+			// Добавляем нового пользователя
+			userRepository.addUser({ id, name, phone, state: "unauthorized" });
 		}
 	}
 
