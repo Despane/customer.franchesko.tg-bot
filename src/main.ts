@@ -16,7 +16,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Инициализация бота
-const bot = new Telegraf("8085409440:AAGuxGaLyXqHUs385-oF8wLTlcVWQzw6FZA");
+const bot = new Telegraf("8163653157:AAHmK3wt0kpKOmenqiLYL_w0KAPhRQA1ZsU");
 
 // Используем middleware для обработки запросов от Telegram
 app.use(express.json());
@@ -80,7 +80,7 @@ bot.command("start", (ctx) => userController.handleStart(ctx));
 bot.command("logout", (ctx) => userController.handleLogout(ctx));
 bot.on("contact", (ctx) => userController.handleContact(ctx));
 bot.on("text", (ctx) => userController.handleText(ctx));
-
+bot.action("change_phone",  (ctx) => userController.handlePhone(ctx));
 // Запуск сервера Express
 app.listen(port, () => {
 	console.log(`Server is running on http://localhost:${port}`);

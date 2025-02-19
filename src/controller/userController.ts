@@ -40,6 +40,12 @@ const BUTTONS = {
 		text: "Отправить номер телефона",
 		request_contact: true,
 	},
+	CHANGE_PHON:{
+		text: "Изменить телефон",
+	},
+	REPEAT_CODE:{
+		text: "Запросить код повторно",
+	},
 	LOGOUT: {
 		text: "Выйти",
 	},
@@ -55,6 +61,9 @@ const BUTTONS = {
 	CHANGE_MAIL: {
 		text: "Сменить почту",
 	},
+	ACCII:{
+	text: "Актуальные акции",
+}
 };
 
 const KEYBOARDS = {
@@ -65,11 +74,25 @@ const KEYBOARDS = {
 			one_time_keyboard: true,
 		},
 	},
+	CHANGE_PHONE1: {
+		reply_markup: {
+			keyboard: [[BUTTONS.CHANGE_PHON]],
+			resize_keyboard: true,
+			one_time_keyboard: true,
+		},
+	},
+	CHANGE_PHONE: {
+		reply_markup: {
+			keyboard: [[BUTTONS.REPEAT_CODE]],
+			resize_keyboard: true,
+			one_time_keyboard: true,
+		},
+	},
 	AUTHORIZED: {
 		reply_markup: {
 			keyboard: [
 				[BUTTONS.BALANCE, BUTTONS.QR_CODE],
-				[BUTTONS.LAST_OPERATIONS, BUTTONS.LOGOUT,BUTTONS.CHANGE_MAIL],
+				[BUTTONS.LAST_OPERATIONS, BUTTONS.LOGOUT,BUTTONS.CHANGE_MAIL,BUTTONS.ACCII],
 			],
 			resize_keyboard: true,
 		},
@@ -101,8 +124,11 @@ export class UserController {
 			this.userService.addUser(userId, "", "");
 			this.userService.updateUserState(userId, "awaiting_phone");
 
-			await ctx.reply(
-				"Добро пожаловать! Для начала работы предоставьте ваш номер телефона.",
+
+				await ctx.reply(
+					"Добро пожаловать в клуб привилегий Francesco Donni! 💫 Теперь шопинг стал еще выгодней! 🎁\n\n" +
+					"Я отвечу на ваши вопросы, смогу уведомлять об интересных акциях, проверять баланс и списывать баллы.\n\n" +
+					"Для начала работы, пожалуйста, предоставьте ваш номер телефона.",
 				KEYBOARDS.SEND_PHONE
 			);
 		} else if (user.state === "awaiting_phone") {
@@ -111,7 +137,7 @@ export class UserController {
 				KEYBOARDS.SEND_PHONE
 			);
 		} else if (user.state === "awaiting_code") {
-			await ctx.reply("Пожалуйста, введите код, отправленный на ваш номер телефона.");
+			await ctx.reply("Пожалуйста, введите код, отправленный на ваш номер телефона.",KEYBOARDS.REMOVE);
 		} else if (user.state === "authorized") {
 			await ctx.reply("Вы авторизованы! Выберите нужное действие", KEYBOARDS.AUTHORIZED);
 		}
@@ -139,16 +165,49 @@ export class UserController {
 								const code = this.userService.generateVerificationCode(userId,contact.phone_number);
 								//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
 								this.userService.updateUserState(userId, "awaiting_code");
-
+								await ctx.reply(`Ваш номер телефона (${contact.phone_number}) успешно получен! ✅`, KEYBOARDS.REMOVE
+								);
 								await ctx.reply(
-									`Ваш номер телефона (${contact.phone_number}) успешно получен. Мы отправили вам код, введите его для авторизации.`
-								);}
+									`Мы отправили вам код, введите его для авторизации.`,{
+										reply_markup: {
+											inline_keyboard: [
+												[{ text: "Изменить телефон", callback_data: "change_phone" }]
+											]
+										}
+									}
+								);
+								setTimeout(async () => {
+									// Проверяем условие, чтобы клавиатура появилась только в нужном состоянии
+									if (user?.state === 'awaiting_code') {
+										await ctx.reply(
+											"Введите код для завершения регистрации.",
+											KEYBOARDS.CHANGE_PHONE  // Клавиатура с кнопкой "Изменить телефон"
+										);
+									}
+								}, 60000);
+							}
 							catch (e) {
 								await ctx.reply(
-									`Ваш номер телефона (${contact.phone_number}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
+									`Ваш номер телефона (${contact.phone_number}) успешно получен! ✅ Мы отправили вам код, введите его для завершения регистрации.`,{
+										reply_markup: {
+											inline_keyboard: [
+												[{ text: "Изменить телефон", callback_data: "change_phone" }]
+											]
+										}
+									}
 								)
 								this.userService.addUser(userId, "", "");
 								this.userService.updateUserState(userId, "unauthorized");
+
+								setTimeout(async () => {
+									// Проверяем условие, чтобы клавиатура появилась только в нужном состоянии
+									if (user?.state === 'awaiting_code') {
+										await ctx.reply(
+											"Введите код для завершения регистрации.",
+											KEYBOARDS.CHANGE_PHONE  // Клавиатура с кнопкой "Изменить телефон"
+										);
+									}
+								}, 60000);
 							}
 						} else {
 							throw new Error("Данные о пользователе не найдены.");
@@ -160,16 +219,51 @@ export class UserController {
 							//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
 							this.userService.addUser(userId, "", contact.phone_number);
 							this.userService.updateUserState(userId, "awaiting_code");
-
+							await ctx.reply(`Ваш номер телефона (${contact.phone_number}) успешно получен! ✅`, KEYBOARDS.REMOVE
+							);
 							await ctx.reply(
-								`Ваш номер телефона (${contact.phone_number}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
-							);}
+								`Мы отправили вам код, введите его для завершения регистрации.`,{
+									reply_markup: {
+										inline_keyboard: [
+											[{ text: "Изменить телефон", callback_data: "change_phone" }]
+										]
+									}
+								}
+							);
+							setTimeout(async () => {
+								// Проверяем условие, чтобы клавиатура появилась только в нужном состоянии
+								if (user?.state === 'awaiting_code') {
+									await ctx.reply(
+										"Введите код для завершения регистрации.",
+										KEYBOARDS.CHANGE_PHONE  // Клавиатура с кнопкой "Изменить телефон"
+									);
+								}
+							}, 60000);
+						}
 						catch (e) {
+							await ctx.reply(`Ваш номер телефона (${contact.phone_number}) успешно получен! ✅`, KEYBOARDS.REMOVE
+							);
 							await ctx.reply(
-								`Ваш номер телефона (${contact.phone_number}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
+								`Мы отправили вам код, введите его для завершения регистрации.`,{
+									reply_markup: {
+										inline_keyboard: [
+											[{ text: "Изменить телефон", callback_data: "change_phone" }]
+										]
+									}
+								}
 							)
 							this.userService.addUser(userId, "", "");
 							this.userService.updateUserState(userId, "unauthorized");
+
+							setTimeout(async () => {
+								// Проверяем условие, чтобы клавиатура появилась только в нужном состоянии
+								if (user?.state === 'awaiting_code') {
+									await ctx.reply(
+										"Введите код для завершения регистрации.",
+										KEYBOARDS.CHANGE_PHONE  // Клавиатура с кнопкой "Изменить телефон"
+									);
+								}
+							}, 60000);
 						}
 					}
 				} else if (user && user.state === "authorized") {
@@ -228,7 +322,7 @@ export class UserController {
 						if(user.code){
 						const qr = await Enterprise.getQRCard(user.code);
 						const filePath = path.join(__dirname,'..', 'class', 'cache', qr);
-
+						await ctx.reply("Покажите этот код на кассе сотруднику магазина для списания и начисления бонусов.");
 						await ctx.replyWithPhoto({ source: filePath });
 					}
 						else{
@@ -286,6 +380,24 @@ export class UserController {
 						"Введите новую почту. Для возврата меню введите любой текст кроме почты"
 					);
 					return;
+				case BUTTONS.ACCII.text:
+					// Отправляем сообщение с inline кнопкой, которая ведет по ссылке
+					await ctx.reply(
+						"Нажмите на кнопку ниже для перехода к актуальным акциям:",
+						{
+							reply_markup: {
+								inline_keyboard: [
+									[
+										{
+											text: "Актуальные акции",  // Текст кнопки
+											url: "https://francesco.ru/aktsii/"  // Ссылка
+										},
+									],
+								],
+							},
+						}
+					);
+					return;
 				default:
 					await ctx.reply("Вы уже авторизованы! Выберите /start для продолжения работы?", KEYBOARDS.AUTHORIZED);
 					return;
@@ -336,15 +448,51 @@ export class UserController {
 							const code = this.userService.generateVerificationCode(userId,messageText);
 							//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
 							this.userService.updateUserState(userId, "awaiting_code");
+							await ctx.reply(`Ваш номер телефона (${messageText}) успешно получен! ✅`, KEYBOARDS.REMOVE
+							);
 							await ctx.reply(
-								`Ваш номер телефона (${messageText}) успешно получен. Мы отправили вам код, введите его для авторизации.`
-							);}
+								`Мы отправили вам код, введите его для авторизации.`,{
+									reply_markup: {
+										inline_keyboard: [
+											[{ text: "Изменить телефон", callback_data: "change_phone" }]
+										]
+									}
+								}
+							);
+
+							setTimeout(async () => {
+								// Проверяем условие, чтобы клавиатура появилась только в нужном состоянии
+								if (user?.state === 'awaiting_code') {
+									await ctx.reply(
+										"Введите код для завершения регистрации.",
+										KEYBOARDS.CHANGE_PHONE  // Клавиатура с кнопкой "Изменить телефон"
+									);
+								}
+							}, 60000);
+
+						}
 						catch (e) {
 							await ctx.reply(
-								`Ваш номер телефона (${messageText}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
+								`Ваш номер телефона (${messageText}) успешно получен! ✅ Мы отправили вам код, введите его для завершения регистрации.`,{
+									reply_markup: {
+										inline_keyboard: [
+											[{ text: "Изменить телефон", callback_data: "change_phone" }]
+										]
+									}
+								}
 							)
 							this.userService.addUser(userId, "", "");
 							this.userService.updateUserState(userId, "unauthorized");
+
+							setTimeout(async () => {
+								// Проверяем условие, чтобы клавиатура появилась только в нужном состоянии
+								if (user.state === "awaiting_code") {
+									await ctx.reply(
+										"Введите код для завершения регистрации.",
+										KEYBOARDS.CHANGE_PHONE  // Клавиатура с кнопкой "Изменить телефон"
+									);
+								}
+							}, 60000);
 						}
 					} else {
 						throw new Error("Данные о пользователе не найдены.");
@@ -356,56 +504,120 @@ export class UserController {
 						//console.log(`Сгенерированный код для пользователя ${userId}: ${code}`);
 						this.userService.addUser(userId, "", messageText);
 						this.userService.updateUserState(userId, "awaiting_code");
-
+						await ctx.reply(`Ваш номер телефона (${messageText}) успешно получен! ✅`, KEYBOARDS.REMOVE
+						);
 						await ctx.reply(
-							`Ваш номер телефона (${messageText}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
-						);}
+							`Мы отправили вам код, введите его для завершения регистрации.`,{
+								reply_markup: {
+									inline_keyboard: [
+										[{ text: "Изменить телефон", callback_data: "change_phone" }]
+									]
+								}
+							}
+						);
+						setTimeout(async () => {
+							// Проверяем условие, чтобы клавиатура появилась только в нужном состоянии
+							if (user?.state === 'awaiting_code') {
+								await ctx.reply(
+									"Введите код для завершения регистрации.",
+									KEYBOARDS.CHANGE_PHONE  // Клавиатура с кнопкой "Изменить телефон"
+								);
+							}
+						}, 60000);
+					}
 					catch (e) {
 						await ctx.reply(
-							`Ваш номер телефона (${messageText}) успешно получен. Мы отправили вам код, введите его для завершения регистрации.`
-						)
+							`Ваш номер телефона (${messageText}) успешно получен! ✅ Мы отправили вам код, введите его для завершения регистрации.`,{
+								reply_markup: {
+									inline_keyboard: [
+										[{ text: "Изменить телефон", callback_data: "change_phone" }]
+									]
+								}
+							}
+						);
 						this.userService.addUser(userId, "", "");
 						this.userService.updateUserState(userId, "unauthorized");
+						setTimeout(async () => {
+							// Проверяем условие, чтобы клавиатура появилась только в нужном состоянии
+							if (user.state === "awaiting_code") {
+								await ctx.reply(
+									"Введите код для завершения регистрации.",
+									KEYBOARDS.CHANGE_PHONE  // Клавиатура с кнопкой "Изменить телефон"
+								);
+							}
+						}, 60000);
 					}
 				}
 			} else {
 				await ctx.reply("Введите корректный номер телефона в международном формате (например, +123456789).");
 			}
-		} else if (user.state === "awaiting_code") {
-			const isCodeValid = this.userService.verifyCode(userId, messageText);
-
-			if (isCodeValid) {
-				if (user.code) {
-					// Если код верный, далее процесс регистрации или авторизации
-					this.userService.updateUserState(userId, "authorized");
-					await ctx.reply("Код подтвержден. Вы авторизованы.", KEYBOARDS.AUTHORIZED);
-					try {
-						let auth = await Enterprise.updateCardDetailsByPhone(user.phone,'',userId)
-					}
-					catch (e){
-
-					}
-				}
-				else{
-				this.userService.updateUserState(userId, "awaiting_name");
-				this.userService.resetFailedAttempts(userId); // Сбрасываем счётчик
-				await ctx.reply("Код успешно подтвержден. Теперь введите ваше имя для регистрации.");}
+		}
+		else if (user.state === "awaiting_code") {
+			// Проверка на нажатие кнопок
+			if (messageText === BUTTONS.CHANGE_PHON.text) {
+				// Логика для изменения телефона
+				this.userService.addUser(userId,'','')
+				this.userService.updateUserState(userId, "awaiting_phone");
+				this.userService.updateUserCode(userId,"")
+				await ctx.reply("Пожалуйста, отправьте ваш номер телефона.", KEYBOARDS.SEND_PHONE);
+				return;
+			} else if (messageText === BUTTONS.REPEAT_CODE.text) {
+				// Логика для повторной отправки кода
+				this.userService.resetFailedAttempts(userId);
+				this.userService.generateVerificationCode(userId,user.phone)// Сбрасываем счётчик неверных попыток
+				await ctx.reply("Запрос на повторный код отправлен. Пожалуйста, проверьте ваш телефон.");
+				return;
+				// Тут можно добавить вызов функции для отправки нового кода
 			} else {
-				// Увеличиваем счётчик неверных попыток
-				const attemptsLeft = this.userService.incrementFailedAttempts(userId);
+				// Если это не кнопка, то проверяем код
+				const isCodeValid = this.userService.verifyCode(userId, messageText);
+				//console.log(user.code)
+				if (isCodeValid) {
+					if (user.code) {
+						// Если код верный, далее процесс регистрации или авторизации
+						this.userService.updateUserState(userId, "authorized");
+						await ctx.reply("Код успешно подтвержден. ✅", KEYBOARDS.AUTHORIZED);
+						await ctx.reply(
+							"Ваши данные уже загружены\\. Используйте меню ниже:\n\n" +
+							"1\\) посмотреть баланс бонусов – *Баланс* ✨\n" +
+							"2\\) списать бонусы в магазине, показав сотруднику ваш QR\\-код – *QR код* 🛍️\n" +
+							"3\\) посмотреть историю покупок и списаний – *Последние операции* 📒\n" +
+							"4\\) выйти из учетной системы бота – *Выйти* ✖️\n" +
+							"5\\) изменить вашу почту – *Сменить почту* 📩",
+							{
+								parse_mode: "MarkdownV2",
+							}
+						);
 
-				if (attemptsLeft > 0) {
-					await ctx.reply(
-						`Неверный код. У вас осталось ${attemptsLeft} ${attemptsLeft === 1 ? "попытка" : "попытки"}.`
-					);
+						try {
+							let auth = await Enterprise.updateCardDetailsByPhone(user.phone, '', userId);
+						}
+						catch (e) {
+							// Обработка ошибок
+						}
+					}
+					else {
+						this.userService.updateUserState(userId, "awaiting_name");
+						this.userService.resetFailedAttempts(userId); // Сбрасываем счётчик
+						await ctx.reply("Код успешно подтвержден. ✅️Введите ваше имя для регистрации в программе лояльности.");
+					}
 				} else {
-					// Сбрасываем пользователя к начальному состоянию
-					this.userService.updateUserState(userId, "awaiting_phone");
-					this.userService.resetFailedAttempts(userId); // Сбрасываем счётчик
-					await ctx.reply(
-						"Вы превысили количество попыток ввода кода. Регистрация началась заново. Пожалуйста, отправьте ваш номер телефона.",
-						KEYBOARDS.SEND_PHONE
-					);
+					// Увеличиваем счётчик неверных попыток
+					const attemptsLeft = this.userService.incrementFailedAttempts(userId);
+
+					if (attemptsLeft > 0) {
+						await ctx.reply(
+							`Неверный код. У вас осталось ${attemptsLeft} ${attemptsLeft === 1 ? "попытка" : "попытки"}.`
+						);
+					} else {
+						// Сбрасываем пользователя к начальному состоянию
+						this.userService.updateUserState(userId, "awaiting_phone");
+						this.userService.resetFailedAttempts(userId); // Сбрасываем счётчик
+						await ctx.reply(
+							"Вы превысили количество попыток ввода кода. Регистрация началась заново. Пожалуйста, отправьте ваш номер телефона.",
+							KEYBOARDS.SEND_PHONE
+						);
+					}
 				}
 			}
 		}
@@ -417,7 +629,7 @@ export class UserController {
 			}
 			this.userService.addUser(userId, messageText, user.phone);
 			this.userService.updateUserState(userId, "awaiting_mail");
-			await ctx.reply(`Спасибо, ${messageText}! Теперь введите почту`, KEYBOARDS.REMOVE);
+			await ctx.reply(`Спасибо, ${messageText}! Теперь осталось только ввести почту`, KEYBOARDS.REMOVE);
 		}
 		else if (user.state === "awaiting_mail") {
 			try {
@@ -438,7 +650,7 @@ export class UserController {
 				let regUser = await Enterprise.addNewCard(user.name, user.phone, messageText, user.id);
 				this.userService.updateUserCode(userId, regUser);
 				this.userService.updateUserState(userId, "authorized");
-				await ctx.reply(`Регистрация завершена.`, KEYBOARDS.AUTHORIZED);
+				await ctx.reply(`Поздравляем, Имя! Регистрация завершена! 🎉`, KEYBOARDS.AUTHORIZED);
 			} catch (e) {
 				await ctx.reply(`Регистрация не завершена, попробуйте позже.`);
 				this.userService.updateUserState(userId, "unauthorized");
@@ -482,5 +694,19 @@ export class UserController {
 			"Вы успешно вышли из системы. Для повторной регистрации используйте команду /start.",
 			KEYBOARDS.REMOVE
 		);
+	}
+	public async handlePhone(ctx: Context): Promise<void> {
+		const userId = ctx.from?.id;
+		await ctx.answerCbQuery();
+		if (!userId) return;
+		const user = this.userService.getUserInfo(userId);
+		if (!user) {
+			await ctx.reply("произошла критическая ошибка");
+			return;
+		}
+		this.userService.addUser(userId,'','')
+		this.userService.updateUserState(userId, "awaiting_phone");
+		this.userService.updateUserCode(userId,"")
+		await ctx.reply("Пожалуйста, отправьте ваш номер телефона.", KEYBOARDS.SEND_PHONE);
 	}
 }
