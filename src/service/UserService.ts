@@ -46,7 +46,7 @@ export class UserService {
 
 		axios.get("https://sms.ru/sms/send", {
 			params: {
-				api_id: "BAADB095-E9A7-0E3F-91D5-77A094FA9574",
+				api_id: "CB21E557-9560-11D0-B082-DF9B8E65A612",
 				to: phone,
 				msg: message,
 				json: 1
